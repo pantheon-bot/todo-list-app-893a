@@ -36,13 +36,39 @@ export default function Home() {
     fetchTodos();
   }, [filter]);
 
-  const handleAddTodo = async (title: string, description: string, dueDate: string) => {
+  const handleAddTodo = async (username: string, title: string, description: string, dueDate: string) => {
     try {
+      // First, try to find or create the user
+      const usersResponse = await fetch('/api/users');
+      const usersData = await usersResponse.json();
+      let user = usersData.users?.find((u: any) => u.username === username);
+
+      // If user doesn't exist, create one
+      if (!user) {
+        const createUserResponse = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            email: `${username}@example.com`, // Generate a default email
+          }),
+        });
+
+        if (createUserResponse.ok) {
+          const userData = await createUserResponse.json();
+          user = userData.user;
+        } else {
+          console.error('Failed to create user');
+          return false;
+        }
+      }
+
+      // Now create the todo with the user's ID
       const response = await fetch('/api/todos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: userId,
+          user_id: user.id,
           title,
           description: description || undefined,
           due_date: dueDate || undefined,

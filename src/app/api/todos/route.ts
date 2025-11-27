@@ -19,9 +19,20 @@ export async function GET(request: NextRequest) {
 
     let query = db
       .selectFrom('todos')
-      .selectAll()
-      .where('user_id', '=', Number(userId))
-      .orderBy('created_at', 'desc');
+      .innerJoin('users', 'users.id', 'todos.user_id')
+      .select([
+        'todos.id',
+        'todos.user_id',
+        'todos.title',
+        'todos.description',
+        'todos.is_completed',
+        'todos.due_date',
+        'todos.created_at',
+        'todos.updated_at',
+        'users.username'
+      ])
+      .where('todos.user_id', '=', Number(userId))
+      .orderBy('todos.created_at', 'desc');
 
     // Filter by completion status if provided
     if (isCompletedParam !== null) {
@@ -74,11 +85,22 @@ export async function POST(request: NextRequest) {
       .values(newTodo)
       .executeTakeFirstOrThrow();
 
-    // Fetch the created todo
+    // Fetch the created todo with username
     const createdTodo = await db
       .selectFrom('todos')
-      .selectAll()
-      .where('id', '=', Number(result.insertId))
+      .innerJoin('users', 'users.id', 'todos.user_id')
+      .select([
+        'todos.id',
+        'todos.user_id',
+        'todos.title',
+        'todos.description',
+        'todos.is_completed',
+        'todos.due_date',
+        'todos.created_at',
+        'todos.updated_at',
+        'users.username'
+      ])
+      .where('todos.id', '=', Number(result.insertId))
       .executeTakeFirst();
 
     return NextResponse.json(

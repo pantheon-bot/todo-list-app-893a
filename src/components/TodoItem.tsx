@@ -6,6 +6,7 @@ interface Todo {
   due_date: Date | null;
   created_at: Date;
   updated_at: Date;
+  username: string;
 }
 
 interface TodoItemProps {
@@ -39,6 +40,19 @@ export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
       />
 
       <div className="flex-1 min-w-0">
+        <div className="mb-2">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            {todo.username}
+          </span>
+        </div>
         <div className="flex items-start justify-between gap-2">
           <h3
             className={`text-base font-medium ${

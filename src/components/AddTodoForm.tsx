@@ -3,10 +3,11 @@
 import { useState } from 'react';
 
 interface AddTodoFormProps {
-  onAdd: (title: string, description: string, dueDate: string) => Promise<boolean>;
+  onAdd: (username: string, title: string, description: string, dueDate: string) => Promise<boolean>;
 }
 
 export default function AddTodoForm({ onAdd }: AddTodoFormProps) {
+  const [username, setUsername] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -15,12 +16,13 @@ export default function AddTodoForm({ onAdd }: AddTodoFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) return;
+    if (!username.trim() || !title.trim()) return;
 
     setIsSubmitting(true);
-    const success = await onAdd(title.trim(), description.trim(), dueDate);
+    const success = await onAdd(username.trim(), title.trim(), description.trim(), dueDate);
 
     if (success) {
+      setUsername('');
       setTitle('');
       setDescription('');
       setDueDate('');
@@ -31,6 +33,18 @@ export default function AddTodoForm({ onAdd }: AddTodoFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+          className="w-full px-4 py-3 text-lg border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+          maxLength={100}
+          disabled={isSubmitting}
+        />
+      </div>
+
       <div>
         <input
           type="text"
@@ -64,7 +78,7 @@ export default function AddTodoForm({ onAdd }: AddTodoFormProps) {
 
       <button
         type="submit"
-        disabled={!title.trim() || isSubmitting}
+        disabled={!username.trim() || !title.trim() || isSubmitting}
         className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isSubmitting ? (
