@@ -1,65 +1,151 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import TodoList from '@/components/TodoList';
+import AddTodoForm from '@/components/AddTodoForm';
+import FilterBar from '@/components/FilterBar';
 
 export default function Home() {
+  const [userId] = useState(1); // For demo purposes, using user_id = 1
+  const [todos, setTodos] = useState([]);
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [loading, setLoading] = useState(true);
+
+  const fetchTodos = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({ user_id: userId.toString() });
+
+      if (filter === 'active') {
+        params.append('is_completed', 'false');
+      } else if (filter === 'completed') {
+        params.append('is_completed', 'true');
+      }
+
+      const response = await fetch(`/api/todos?${params}`);
+      const data = await response.json();
+      setTodos(data.todos || []);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTodos();
+  }, [filter]);
+
+  const handleAddTodo = async (title: string, description: string, dueDate: string) => {
+    try {
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          title,
+          description: description || undefined,
+          due_date: dueDate || undefined,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchTodos();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error adding todo:', error);
+      return false;
+    }
+  };
+
+  const handleToggleTodo = async (id: number, isCompleted: number) => {
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_completed: isCompleted ? 0 : 1,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchTodos();
+      }
+    } catch (error) {
+      console.error('Error toggling todo:', error);
+    }
+  };
+
+  const handleDeleteTodo = async (id: number) => {
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await fetchTodos();
+      }
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+    }
+  };
+
+  const stats = {
+    total: todos.length,
+    active: todos.filter((t: any) => !t.is_completed).length,
+    completed: todos.filter((t: any) => t.is_completed).length,
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <header className="mb-8 text-center">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
+            Todo List
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-600 dark:text-gray-400">
+            Organize your tasks efficiently
           </p>
+        </header>
+
+        <div className="mb-6 flex justify-center gap-6 text-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2 shadow">
+            <span className="text-gray-600 dark:text-gray-400">Total: </span>
+            <span className="font-semibold text-gray-900 dark:text-white">{stats.total}</span>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2 shadow">
+            <span className="text-gray-600 dark:text-gray-400">Active: </span>
+            <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.active}</span>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2 shadow">
+            <span className="text-gray-600 dark:text-gray-400">Completed: </span>
+            <span className="font-semibold text-green-600 dark:text-green-400">{stats.completed}</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 mb-6">
+          <AddTodoForm onAdd={handleAddTodo} />
+        </div>
+
+        <FilterBar currentFilter={filter} onFilterChange={setFilter} />
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading todos...</p>
+            </div>
+          ) : (
+            <TodoList
+              todos={todos}
+              onToggle={handleToggleTodo}
+              onDelete={handleDeleteTodo}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
